@@ -18,7 +18,6 @@ UDPMovementComponent::UDPMovementComponent(const FObjectInitializer& ObjectIniti
 	DashDistance = 3000.f;
 	DashCooldown = 3.f;
 	DashStop = 0.2;
-	DashGRDMultiplyer = 2.f;
 	MaxDashStack = 2;
 	DashStack = MaxDashStack;
 	bHasTouchedGround = true;
