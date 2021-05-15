@@ -4,6 +4,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/DPMovementComponent.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -16,7 +17,10 @@ class DUNGEONPROTOTYPE_API ADPPlayerCharacter : public ACharacter
 
 public:
 	// Sets default values for this character's properties
-	ADPPlayerCharacter();
+	ADPPlayerCharacter(const FObjectInitializer& ObjectInitializer);
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		FORCEINLINE class UDPMovementComponent* GetDPMovementComp() const { return DPMovementComponent; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -29,14 +33,24 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual void PostInitializeComponents() override;
+
+	virtual bool CanJumpInternal_Implementation() const override;
+
 private:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void LookUp(float Value);
 	void Turn(float Value);
 
+	void Dash();
+	void Sprint();
+	void Walk();
+
 	UPROPERTY(EditAnywhere)
 		UCameraComponent* TPCameraComp;
 	UPROPERTY(EditAnywhere)
 		USpringArmComponent* SpringArmComp;
+	UPROPERTY(EditAnywhere)
+		UDPMovementComponent* DPMovementComponent;
 };
