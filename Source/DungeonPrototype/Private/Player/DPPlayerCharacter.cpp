@@ -4,7 +4,8 @@
 #include "Player/DPPlayerCharacter.h"
 
 // Sets default values
-ADPPlayerCharacter::ADPPlayerCharacter()
+ADPPlayerCharacter::ADPPlayerCharacter(const FObjectInitializer& ObjectInitializer)
+	:Super(ObjectInitializer.SetDefaultSubobjectClass<UDPMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -55,7 +56,28 @@ void ADPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAxis("Turn", this, &ADPPlayerCharacter::Turn);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ADPPlayerCharacter::Jump);
+	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ADPPlayerCharacter::Dash);
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ADPPlayerCharacter::Sprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ADPPlayerCharacter::Walk);
 
+}
+
+void ADPPlayerCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	DPMovementComponent = Cast<UDPMovementComponent>(Super::GetMovementComponent());
+}
+
+bool ADPPlayerCharacter::CanJumpInternal_Implementation() const
+{
+	bool bCanJump = Super::CanJumpInternal_Implementation();
+	if (!bCanJump && GetDPMovementComponent())
+	{
+		bCanJump = GetDPMovementComponent()->CanJump();
+	}
+
+	return bCanJump;
 }
 
 void ADPPlayerCharacter::MoveForward(float Value)
@@ -99,5 +121,20 @@ void ADPPlayerCharacter::Turn(float Value)
 	{
 		AddControllerYawInput(Value); //Simplest Already
 	}
+}
+
+void ADPPlayerCharacter::Dash()
+{
+	GetDPMovementComponent()->Dash();
+}
+
+void ADPPlayerCharacter::Sprint()
+{
+	DPMovementComponent->MaxWalkSpeed = DPMovementComponent->SprintSpeed;
+}
+
+void ADPPlayerCharacter::Walk()
+{
+	DPMovementComponent->MaxWalkSpeed = DPMovementComponent->WalkSpeed;
 }
 
