@@ -55,13 +55,30 @@ void ADPPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAxis("Lookup", this, &ADPPlayerCharacter::LookUp);
 	PlayerInputComponent->BindAxis("Turn", this, &ADPPlayerCharacter::Turn);
 
-	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ADPPlayerCharacter::Sprint);
-	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ADPPlayerCharacter::Walk);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ADPPlayerCharacter::Jump);
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ADPPlayerCharacter::Dash);
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ADPPlayerCharacter::Sprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ADPPlayerCharacter::Walk);
 
 }
 
+void ADPPlayerCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	DPMovementComponent = Cast<UDPMovementComponent>(Super::GetMovementComponent());
+}
+
+bool ADPPlayerCharacter::CanJumpInternal_Implementation() const
+{
+	bool bCanJump = Super::CanJumpInternal_Implementation();
+	if (!bCanJump && GetDPMovementComponent())
+	{
+		bCanJump = GetDPMovementComponent()->CanJump();
+	}
+
+	return bCanJump;
+}
 
 void ADPPlayerCharacter::MoveForward(float Value)
 {
@@ -108,42 +125,16 @@ void ADPPlayerCharacter::Turn(float Value)
 
 void ADPPlayerCharacter::Dash()
 {
-	if (DPMovementComponent)
-	{
-		GetDPMovementComp()->Dash();
-	}
+	GetDPMovementComponent()->Dash();
 }
 
 void ADPPlayerCharacter::Sprint()
 {
-	if (DPMovementComponent)
-	{
-		GetDPMovementComp()->Sprint();
-	}
+	DPMovementComponent->MaxWalkSpeed = DPMovementComponent->SprintSpeed;
 }
 
 void ADPPlayerCharacter::Walk()
 {
-	if (DPMovementComponent)
-	{
-		GetDPMovementComp()->Walk();
-	}
+	DPMovementComponent->MaxWalkSpeed = DPMovementComponent->WalkSpeed;
 }
 
-void ADPPlayerCharacter::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
-
-	DPMovementComponent = Cast<UDPMovementComponent>(Super::GetMovementComponent());
-}
-
-bool ADPPlayerCharacter::CanJumpInternal_Implementation() const
-{
-	bool bCanJump = Super::CanJumpInternal_Implementation();
-	if (!bCanJump && GetDPMovementComp())
-	{
-		bCanJump = GetDPMovementComp()->bCanJump();
-	}
-
-	return bCanJump;
-}

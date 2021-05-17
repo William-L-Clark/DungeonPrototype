@@ -3,33 +3,34 @@
 
 #include "Components/DPMovementComponent.h"
 #include "Player/DPPlayerCharacter.h"
-#include "Runtime/Engine/Public/TimerManager.h"
+#include "..\..\Public\Components\DPMovementComponent.h"
 
-// Setup Default
 UDPMovementComponent::UDPMovementComponent(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer)
 {
 	//Sprint Defaults
 	WalkSpeed = 600.f;
 	MaxWalkSpeed = WalkSpeed;
-	SprintSpeed = 1800.f;
+	SprintSpeed = 1800;
 
 	//Dash Defaults
 	DashDistance = 3000.f;
 	DashCooldown = 3.f;
-	DashStop = 0.2;
-	MaxDashStack = 2;
-	DashStack = MaxDashStack;
-	bHasTouchedGround = true;
-
-	//Multi Jump Defaults
+	DashStop = 0.2f;
+	ExtraDashes = 2;
+	DashStack = ExtraDashes;
+	
+	//Multi-jump Defaults
+	bHasTouchedGrd = true;
 	MaxJumps = 2;
 	JumpCount = 0;
+	MaxJumpHeight = 600.f;
+	JumpZVelocity = MaxJumpHeight;
 }
 
 bool UDPMovementComponent::bCanDash()
 {
-	return (DashStack > 0 && DashStack <= MaxDashStack && Velocity.Size() > 0.f);
+	return (DashStack > 0 && DashStack <= ExtraDashes && Velocity.Size() > 0.0f);
 }
 
 void UDPMovementComponent::Dash()
@@ -39,57 +40,59 @@ void UDPMovementComponent::Dash()
 	if (bCanDash())
 	{
 		MoveDirection.Normalize();
-		/* Use if Teleport Method
-		FVector DashLocation = OldLocation + (MoveDirection * DashDistance);*/
-		FVector DashVelocity = FVector(MoveDirection.X, MoveDirection.Y, 0.f).GetSafeNormal() * DashDistance;
+		FVector DashVelocity = FVector(MoveDirection.X, MoveDirection.Y, 0.f) * DashDistance;
 		if (!IsMovingOnGround())
 		{
-			bHasTouchedGround = false;
+			bHasTouchedGrd = false;
 		}
 		BrakingFrictionFactor = 0.f;
 		Launch(DashVelocity);
-		/* Alternative Dash is teleport player
-		GetPawnOwner()->SetActorLocation(DashLocation, false, nullptr, ETeleportType::TeleportPhysics); */
 		DashStack--;
 		GetWorld()->GetTimerManager().SetTimer(DashTimerHandle, this, &UDPMovementComponent::StopDash, DashStop, false);
+	}
+	else
+	{
+		if (!DashCooldownTimerHandle.IsValid() || GetWorld()->GetTimerManager().GetTimerRemaining(DashCooldownTimerHandle) <= 0.f)
+		{
+			DashReset();
+		}
 	}
 }
 
 void UDPMovementComponent::StopDash()
 {
 	StopMovementImmediately();
-	GetWorld()->GetTimerManager().SetTimer(DashTimerHandle, this, &UDPMovementComponent::DashReset, DashCooldown, false);
-	BrakingFrictionFactor = 2.f;
+	GetWorld()->GetTimerManager().SetTimer(DashCooldownTimerHandle, this, &UDPMovementComponent::DashReset, DashCooldown, false);
+	BrakingFrictionFactor = 2.0f;
 }
 
 void UDPMovementComponent::DashReset()
 {
-	if (bHasTouchedGround && DashStack < MaxDashStack)
+	if (bHasTouchedGrd && DashStack < ExtraDashes)
 	{
-		DashStack = MaxDashStack;
+		DashStack = ExtraDashes;
 	}
 }
 
-void UDPMovementComponent::Sprint()
+bool UDPMovementComponent::CanJump()
 {
-	MaxWalkSpeed = SprintSpeed;
-}
-
-void UDPMovementComponent::Walk()
-{
-	MaxWalkSpeed = WalkSpeed;
+	return (IsMovingOnGround() || JumpCount < MaxJumps) && CanEverJump();
 }
 
 void UDPMovementComponent::ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations)
 {
-	Super::ProcessLanded(Hit, remainingTime, Iterations);
+	bHasTouchedGrd = true;
 	JumpCount = 0;
-	bHasTouchedGround = true;
+	if (GetWorld()->GetTimerManager().GetTimerRemaining(DashCooldownTimerHandle) <= 0.f)
+	{
+		DashReset();
+	}
+	Super::ProcessLanded(Hit, remainingTime, Iterations);
 }
 
 bool UDPMovementComponent::DoJump(bool bReplayingMoves)
 {
-	if (Super::DoJump(bReplayingMoves))
+	if (Super::DoJump((bReplayingMoves)))
 	{
 		JumpCount++;
 		return true;
@@ -98,7 +101,13 @@ bool UDPMovementComponent::DoJump(bool bReplayingMoves)
 	return false;
 }
 
-bool UDPMovementComponent::bCanJump()
+bool UDPMovementComponent::HandlePendingLaunch()
 {
-	return (IsMovingOnGround() || JumpCount < MaxJumps) && CanEverJump();
+	if (!PendingLaunchVelocity.IsZero() && HasValidData()) {
+		Velocity = PendingLaunchVelocity;
+		PendingLaunchVelocity = FVector::ZeroVector;
+		bForceNextFloorCheck = true;
+		return true;
+	}
+	return false;
 }

@@ -20,7 +20,7 @@ public:
 	ADPPlayerCharacter(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-		FORCEINLINE class UDPMovementComponent* GetDPMovementComp() const { return DPMovementComponent; }
+		FORCEINLINE class UDPMovementComponent* GetDPMovementComponent() const { return DPMovementComponent; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -37,6 +37,7 @@ public:
 
 	virtual bool CanJumpInternal_Implementation() const override;
 
+
 private:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -51,6 +52,7 @@ private:
 		UCameraComponent* TPCameraComp;
 	UPROPERTY(EditAnywhere)
 		USpringArmComponent* SpringArmComp;
+
 	UPROPERTY(EditAnywhere)
 		UDPMovementComponent* DPMovementComponent;
 };

@@ -13,63 +13,57 @@ UCLASS()
 class DUNGEONPROTOTYPE_API UDPMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_UCLASS_BODY()
-	
-public:
 
+public: 
 
-	///==========================
-	///		DASH
-	///==========================
-	
-	UPROPERTY(EditAnywhere, Category = "Dash")
+	/// Dash
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash")
 		float DashDistance;
-	UPROPERTY(EditAnywhere, Category = "Dash")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash")
 		float DashCooldown;
-	UPROPERTY(EditAnywhere, Category = "Dash")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash")
 		float DashStop;
-	UPROPERTY(EditAnywhere, Category = "Dash")
-		float DashGRDMultiplyer;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash")
-		int MaxDashStack;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash")
+		int ExtraDashes;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category = "Dash")
 		int DashStack;
 	UPROPERTY()
-		bool bHasTouchedGround;
-
+		FVector MoveDirection;
+	UPROPERTY()
+		FTimerHandle DashTimerHandle;
+	UPROPERTY()
+		FTimerHandle DashCooldownTimerHandle;
+	
 	UFUNCTION()
 		bool bCanDash();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable, Category = "Dash")
 		void Dash();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable, Category = "Dash")
 		void StopDash();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable, Category = "Dash")
 		void DashReset();
 
-	FVector MoveDirection;
-
-///=========================================
-///					Sprint
-///=========================================
+	//Sprint
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sprint")
 		float SprintSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sprint")
 		float WalkSpeed;
+
+	// Multi-Jump
+	UPROPERTY()
+		bool bHasTouchedGrd;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Multi-Jump")
+		int MaxJumps;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Multi-Jump")
+		int JumpCount;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Multi-Jump")
+		float MaxJumpHeight;
 	UFUNCTION()
-		void Sprint();
-	UFUNCTION()
-		void Walk();
-///==========================================
-///				Double Jump
-///==========================================
+		bool CanJump();
+
 	virtual void ProcessLanded(const FHitResult& Hit, float remainingTime, int32 Iterations) override;
 	virtual bool DoJump(bool bReplayingMoves) override;
-	bool bCanJump();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MultiJump")
-		int MaxJumps;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MultiJump")
-		int JumpCount;
-	UPROPERTY()
-		FTimerHandle DashTimerHandle;
+	virtual bool HandlePendingLaunch() override;
 
 };
